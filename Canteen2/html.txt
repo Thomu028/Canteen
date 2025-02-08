@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Billing System</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; margin: auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 10px; text-align: center; }
+        button { padding: 10px 15px; margin: 10px; cursor: pointer; }
+        .container { width: 60%; margin: auto; }
+        .bill-section { border: 2px dashed black; padding: 20px; margin-top: 20px; width: 60%; margin: auto; }
+    </style>
+</head>
+<body>
+
+    <h1>Shopkeeper - Manage Menu</h1>
+    <div class="container">
+        <label>Item Number:</label>
+        <input type="number" id="menuItemNumber" min="1">
+        <label>Item Name:</label>
+        <input type="text" id="menuItemName">
+        <label>Price:</label>
+        <input type="number" id="menuItemPrice" min="0" step="0.01">
+        <label>Stock:</label>
+        <input type="number" id="menuItemStock" min="0">
+        <button onclick="addMenuItem()">Add/Update Item</button>
+    </div>
+
+    <h2>Available Menu</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item No</th>
+                <th>Item Name</th>
+                <th>Price</th>
+                <th>Stock Left</th>
+            </tr>
+        </thead>
+        <tbody id="menuTable"></tbody>
+    </table>
+
+    <h1>Billing System</h1>
+    <div class="container">
+        <label>Select Item:</label>
+        <select id="itemSelect"></select>
+        <label>Quantity:</label>
+        <input type="number" id="quantity" min="1" value="1">
+        <button onclick="addItem()">Add Item</button>
+        <button onclick="generateBill()">Generate Bill</button>
+    </div>
+
+    <h2>Selected Items</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item No</th>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Price per Item</th>
+                <th>Total Price</th>
+            </tr>
+        </thead>
+        <tbody id="itemTable"></tbody>
+    </table>
+
+    <div id="billContainer"></div>
+
+    <script>
+        let menu = {}; 
+        let items = []; 
+        let billNumber = 1001;
+
+        function updateMenuDropdown() {
+            let dropdown = document.getElementById("itemSelect");
+            dropdown.innerHTML = "";
+            for (let key in menu) {
+                if (menu[key].stock > 0) {
+                    dropdown.innerHTML += `<option value="${key}">${menu[key].name} - ₹${menu[key].price.toFixed(2)} (Stock: ${menu[key].stock})</option>`;
+                }
+            }
+        }
+
+        function updateMenuTable() {
+            let tableBody = document.getElementById("menuTable");
+            tableBody.innerHTML = "";
+            for (let key in menu) {
+                let item = menu[key];
+                tableBody.innerHTML += `<tr>
+                                            <td>${key}</td>
+                                            <td>${item.name}</td>
+                                            <td>₹${item.price.toFixed(2)}</td>
+                                            <td>${item.stock}</td>
+                                        </tr>`;
+            }
+            updateMenuDropdown();
+        }
+
+        function addMenuItem() {
+            let itemNumber = document.getElementById("menuItemNumber").value;
+            let itemName = document.getElementById("menuItemName").value;
+            let price = parseFloat(document.getElementById("menuItemPrice").value);
+            let stock = parseInt(document.getElementById("menuItemStock").value);
+
+            if (!itemNumber || !itemName || isNaN(price) || price < 0 || stock < 0) {
+                alert("Please enter valid menu details.");
+                return;
+            }
+
+            menu[itemNumber] = { name: itemName, price, stock };
+            updateMenuTable();
+
+            document.getElementById("menuItemNumber").value = "";
+            document.getElementById("menuItemName").value = "";
+            document.getElementById("menuItemPrice").value = "";
+            document.getElementById("menuItemStock").value = "";
+        }
+
+        function addItem() {
+            let itemNumber = document.getElementById("itemSelect").value;
+            let quantity = parseInt(document.getElementById("quantity").value);
+
+            if (!menu[itemNumber] || quantity < 1) {
+                alert("Invalid selection or quantity.");
+                return;
+            }
+
+            if (menu[itemNumber].stock < quantity) {
+                alert(`Only ${menu[itemNumber].stock} left in stock!`);
+                return;
+            }
+
+            let item = menu[itemNumber];
+            let totalPrice = (quantity * item.price).toFixed(2);
+
+            items.push({ itemNumber, name: item.name, quantity, price: item.price.toFixed(2), totalPrice });
+            menu[itemNumber].stock -= quantity;
+            updateMenuTable();
+
+            document.getElementById("itemTable").innerHTML += `<tr>
+                        <td>${itemNumber}</td>
+                        <td>${item.name}</td>
+                        <td>${quantity}</td>
+                        <td>₹${item.price.toFixed(2)}</td>
+                        <td>₹${totalPrice}</td>
+                    </tr>`;
+            document.getElementById("quantity").value = "1";
+        }
+
+        function generateBill() {
+            if (items.length === 0) {
+                alert("No items to bill!");
+                return;
+            }
+
+            let grandTotal = items.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0).toFixed(2);
+            let billHTML = `<div class="bill-section">
+                            <h2>Bill Receipt - Customer Copy</h2>
+                            <p><strong>Bill No:</strong> ${billNumber}</p>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Item No</th>
+                                        <th>Item Name</th>
+                                        <th>Quantity</th>
+                                        <th>Price per Item</th>
+                                        <th>Total Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+            items.forEach(item => {
+                billHTML += `<tr>
+                                <td>${item.itemNumber}</td>
+                                <td>${item.name}</td>
+                                <td>${item.quantity}</td>
+                                <td>₹${item.price}</td>
+                                <td>₹${item.totalPrice}</td>
+                            </tr>`;
+            });
+
+            billHTML += `</tbody></table><h3>Grand Total: ₹${grandTotal}</h3></div>`;
+            document.getElementById("billContainer").innerHTML = billHTML;
+            items = [];
+            document.getElementById("itemTable").innerHTML = "";
+            billNumber++;
+        }
+    </script>
+
+</body>
+</html>
