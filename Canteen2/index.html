@@ -55,6 +55,10 @@
             background: white;
             color: black;
         }
+        #qrcode {
+            display: none; /* Hide QR code by default */
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -128,8 +132,10 @@
             <tbody id="itemTable"></tbody>
         </table>
         <div id="billContainer" class="bill-section"></div>
-        <h2>Pay via GPay</h2>
-        <img src="gpay-qr-code.jpg" alt="GPay QR Code" width="200">
+        <div id="qrcode">
+            <h2>Pay via GPay</h2>
+            <img src="gpay-qr-code.jpg" alt="GPay QR Code" width="200">
+        </div>
     </div>
 
     <script>
@@ -155,6 +161,7 @@
             items = []; // Clear selected items on logout
             updateItemTable();
             document.getElementById("billContainer").innerHTML = ""; // Clear bill
+            document.getElementById("qrcode").style.display = "none"; // Hide QR code
         }
 
         function addMenuItem() {
@@ -242,6 +249,9 @@
             });
             billHTML += `<h4>Total Amount: ₹${totalAmount.toFixed(2)}</h4>`;
             document.getElementById("billContainer").innerHTML = billHTML;
+
+            // Show the QR code
+            document.getElementById("qrcode").style.display = "block";
 
             alert("Payment successful!");
             items = []; // Clear selected items after payment
